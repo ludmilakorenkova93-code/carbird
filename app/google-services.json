@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "15699540734",
+    "firebase_url": "https://football-bird-9cfe8-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "football-bird-9cfe8",
+    "storage_bucket": "football-bird-9cfe8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:15699540734:android:b00291b9d51f4201d283af",
+        "android_client_info": {
+          "package_name": "com.footballbird.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFySWAQOg5KO0WggJ8llnnKqo84wLPlKo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
