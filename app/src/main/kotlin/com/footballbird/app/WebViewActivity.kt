@@ -4,19 +4,23 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
+import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.MimeTypeMap
 import android.webkit.PermissionRequest
 import android.webkit.URLUtil
@@ -37,6 +41,8 @@ class WebViewActivity : Activity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var cameraImageUri: Uri? = null
     private var pendingPermissionRequest: PermissionRequest? = null
+    private var pendingGeolocationOrigin: String? = null
+    private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
     private var pendingDownload: PendingDownload? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,6 +114,7 @@ class WebViewActivity : Activity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
+            setGeolocationEnabled(true)
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             allowFileAccess = true
@@ -124,11 +131,13 @@ class WebViewActivity : Activity() {
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 saveUrl(url)
+                injectClipboardBridge()
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
                 saveUrl(url ?: view.url)
+                injectClipboardBridge()
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
@@ -154,11 +163,30 @@ class WebViewActivity : Activity() {
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread { handleWebPermissionRequest(request) }
             }
+
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String,
+                callback: GeolocationPermissions.Callback,
+            ) {
+                runOnUiThread { handleGeolocationPermissionRequest(origin, callback) }
+            }
+
+            override fun onGeolocationPermissionsHidePrompt() {
+                // Some WebView versions call this while the Android runtime permission dialog is
+                // still open. Do not deny here; the final decision is delivered in
+                // onRequestPermissionsResult.
+            }
         }
 
+        webView.addJavascriptInterface(ClipboardBridge(), CLIPBOARD_BRIDGE_NAME)
         webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
             downloadFile(url, userAgent, contentDisposition, mimeType)
         })
+    }
+
+    private fun injectClipboardBridge() {
+        if (!::webView.isInitialized) return
+        webView.evaluateJavascript(CLIPBOARD_BRIDGE_SCRIPT, null)
     }
 
     private fun saveCurrentPage() {
@@ -287,6 +315,30 @@ class WebViewActivity : Activity() {
         }
     }
 
+    private fun handleGeolocationPermissionRequest(
+        origin: String,
+        callback: GeolocationPermissions.Callback,
+    ) {
+        if (hasLocationPermission()) {
+            callback.invoke(origin, true, false)
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pendingGeolocationOrigin = origin
+            pendingGeolocationCallback = callback
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
+                REQUEST_GEOLOCATION_PERMISSION,
+            )
+        } else {
+            callback.invoke(origin, true, false)
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -309,6 +361,17 @@ class WebViewActivity : Activity() {
             return
         }
 
+        if (requestCode == REQUEST_GEOLOCATION_PERMISSION) {
+            val origin = pendingGeolocationOrigin
+            val callback = pendingGeolocationCallback
+            pendingGeolocationOrigin = null
+            pendingGeolocationCallback = null
+
+            val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED } || hasLocationPermission()
+            callback?.invoke(origin ?: webView.url.orEmpty(), granted, false)
+            return
+        }
+
         if (requestCode != REQUEST_WEB_PERMISSIONS) return
 
         val request = pendingPermissionRequest ?: return
@@ -326,6 +389,10 @@ class WebViewActivity : Activity() {
         } else {
             PackageManager.PERMISSION_GRANTED
         }
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermissionCompat(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermissionCompat(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun downloadFile(
         url: String,
@@ -381,11 +448,64 @@ class WebViewActivity : Activity() {
         val mimeType: String?,
     )
 
+    private inner class ClipboardBridge {
+        @JavascriptInterface
+        fun writeText(text: String?) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, text.orEmpty()))
+        }
+
+        @JavascriptInterface
+        fun readText(): String {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = clipboard.primaryClip ?: return ""
+            return clip.getItemAt(0)?.coerceToText(this@WebViewActivity)?.toString().orEmpty()
+        }
+    }
+
     companion object {
         const val EXTRA_URL = "extra_url"
+        private const val CLIPBOARD_BRIDGE_NAME = "FootballBirdClipboard"
+        private const val CLIPBOARD_LABEL = "Football bird win"
         private const val SAVE_AFTER_BACK_DELAY_MS = 250L
         private const val REQUEST_FILE_CHOOSER = 2401
         private const val REQUEST_WEB_PERMISSIONS = 2402
         private const val REQUEST_DOWNLOAD_PERMISSION = 2403
+        private const val REQUEST_GEOLOCATION_PERMISSION = 2404
+        private val CLIPBOARD_BRIDGE_SCRIPT = """
+            (function() {
+              if (!window.FootballBirdClipboard) return;
+              var clipboard = {
+                writeText: function(text) {
+                  return new Promise(function(resolve, reject) {
+                    try {
+                      window.FootballBirdClipboard.writeText(String(text == null ? '' : text));
+                      resolve();
+                    } catch (error) {
+                      reject(error);
+                    }
+                  });
+                },
+                readText: function() {
+                  return new Promise(function(resolve, reject) {
+                    try {
+                      resolve(String(window.FootballBirdClipboard.readText() || ''));
+                    } catch (error) {
+                      reject(error);
+                    }
+                  });
+                }
+              };
+              try {
+                Object.defineProperty(navigator, 'clipboard', {
+                  configurable: true,
+                  enumerable: true,
+                  value: clipboard
+                });
+              } catch (error) {
+                navigator.clipboard = clipboard;
+              }
+            })();
+        """.trimIndent()
     }
 }
