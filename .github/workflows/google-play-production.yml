@@ -56,5 +56,5 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.carbirdwin.app
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          track: production
+          tracks: production
           status: draft
