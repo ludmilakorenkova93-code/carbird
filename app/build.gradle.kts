@@ -8,11 +8,11 @@ if (file("google-services.json").exists()) {
 }
 
 android {
-    namespace = "com.footballbird.app"
+    namespace = "com.carbirdwin.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.footballbird.app"
+        applicationId = "com.carbirdwin.app"
         minSdk = 23
         targetSdk = 35
         versionCode = (findProperty("versionCode") as String?)?.toIntOrNull() ?: 1

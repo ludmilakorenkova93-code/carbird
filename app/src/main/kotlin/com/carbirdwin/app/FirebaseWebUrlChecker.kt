@@ -1,16 +1,14 @@
-package com.footballbird.app
+package com.carbirdwin.app
 
 import com.google.firebase.database.FirebaseDatabase
 
 object FirebaseWebUrlChecker {
-    private const val DATABASE_URL =
-        "https://football-bird-9cfe8-default-rtdb.europe-west1.firebasedatabase.app"
     private const val URL_NODE = "url"
 
     fun checkUrl(onUrlFound: (String) -> Unit) {
         try {
             FirebaseDatabase
-                .getInstance(DATABASE_URL)
+                .getInstance()
                 .reference
                 .child(URL_NODE)
                 .get()

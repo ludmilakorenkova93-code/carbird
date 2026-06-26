@@ -1,10 +1,10 @@
-package com.footballbird.app
+package com.carbirdwin.app
 
 import android.content.Context
 import android.webkit.URLUtil
 
 object WebUrlStore {
-    private const val PREFS_NAME = "football_bird_web"
+    private const val PREFS_NAME = "car_bird_web"
     private const val KEY_CACHED_URL = "cached_url"
 
     fun getCachedUrl(context: Context): String? {

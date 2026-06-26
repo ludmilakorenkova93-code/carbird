@@ -1,15 +1,15 @@
 <resources>
-    <string name="app_name">Football bird win</string>
-    <string name="menu_title">Football bird win</string>
-    <string name="menu_subtitle">Choose a ball and fly between the goals</string>
+    <string name="app_name">Car Bird Drive</string>
+    <string name="menu_title">Car Bird Drive</string>
+    <string name="menu_subtitle">Pick a ride and slip through the city barriers</string>
     <string name="play">Play</string>
     <string name="best_score">Best: %1$d</string>
     <string name="score">Score: %1$d</string>
-    <string name="tap_to_fly">Tap the screen to kick the ball up</string>
+    <string name="tap_to_fly">Tap to boost over the road</string>
     <string name="game_over">Game over</string>
     <string name="try_again">Try again</string>
-    <string name="menu">Menu</string>
-    <string name="football">Soccer ball</string>
-    <string name="volleyball">Volleyball</string>
-    <string name="basketball">Basketball</string>
+    <string name="garage">Garage</string>
+    <string name="car_cruiser">Cruiser</string>
+    <string name="car_taxi">Taxi</string>
+    <string name="car_sprint">Sprint</string>
 </resources>

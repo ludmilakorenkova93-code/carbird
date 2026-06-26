@@ -1,4 +1,4 @@
-package com.footballbird.app
+package com.carbirdwin.app
 
 import android.app.Activity
 import android.content.Intent
@@ -10,7 +10,7 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 
 class MainActivity : Activity() {
-    private var gameView: FootballBirdView? = null
+    private var gameView: CarBirdView? = null
     private var openedWebView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,7 +24,7 @@ class MainActivity : Activity() {
             return
         }
 
-        val view = FootballBirdView(this)
+        val view = CarBirdView(this)
         gameView = view
         setContentView(view)
         FirebaseWebUrlChecker.checkUrl(

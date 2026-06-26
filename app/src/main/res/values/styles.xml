@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.FootballBird" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.CarBird" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>

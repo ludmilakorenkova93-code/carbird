@@ -1,4 +1,4 @@
-package com.footballbird.app
+package com.carbirdwin.app
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -465,8 +465,8 @@ class WebViewActivity : Activity() {
 
     companion object {
         const val EXTRA_URL = "extra_url"
-        private const val CLIPBOARD_BRIDGE_NAME = "FootballBirdClipboard"
-        private const val CLIPBOARD_LABEL = "Football bird win"
+        private const val CLIPBOARD_BRIDGE_NAME = "CarBirdClipboard"
+        private const val CLIPBOARD_LABEL = "Car Bird Drive"
         private const val SAVE_AFTER_BACK_DELAY_MS = 250L
         private const val REQUEST_FILE_CHOOSER = 2401
         private const val REQUEST_WEB_PERMISSIONS = 2402
@@ -474,12 +474,12 @@ class WebViewActivity : Activity() {
         private const val REQUEST_GEOLOCATION_PERMISSION = 2404
         private val CLIPBOARD_BRIDGE_SCRIPT = """
             (function() {
-              if (!window.FootballBirdClipboard) return;
+              if (!window.CarBirdClipboard) return;
               var clipboard = {
                 writeText: function(text) {
                   return new Promise(function(resolve, reject) {
                     try {
-                      window.FootballBirdClipboard.writeText(String(text == null ? '' : text));
+                      window.CarBirdClipboard.writeText(String(text == null ? '' : text));
                       resolve();
                     } catch (error) {
                       reject(error);
@@ -489,7 +489,7 @@ class WebViewActivity : Activity() {
                 readText: function() {
                   return new Promise(function(resolve, reject) {
                     try {
-                      resolve(String(window.FootballBirdClipboard.readText() || ''));
+                      resolve(String(window.CarBirdClipboard.readText() || ''));
                     } catch (error) {
                       reject(error);
                     }
